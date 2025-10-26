@@ -113,7 +113,7 @@ int main()
 			vector<double> pixels = naiveMonteCarlo(funct, N, bins);
 			double relError = 0;
 			for (double j = 0; j < bins; j++) {
-				//cout << "| " << pixels[j];
+				cout << "| " << pixels[j];
 				//fmt::print("| {}", pixels[j]);
 				//cout << "| " << abs(pixels[j] - prevPixels[j]);
 				relError += abs((pixels[j] - REF_IMAGE_4_10_SEED_0[j]) / REF_IMAGE_4_10_SEED_0[j]);
@@ -181,12 +181,12 @@ int main()
 
 	// Experiment 3
 	if (true) {
-		for (double x = 4; x < 5; x++) {
+		for (double x = 5; x < 6; x++) {
 			double N = pow(10, x);
 			double relError = 0;
 			std::cout << "Multi Level Langevin Monte Carlo:\nBase:\n";
 
-			vector<double> pixels = langevinMonteCarloBiased(funct, N, 0.1, stdSampler, bins);
+			vector<double> pixels = langevinMonteCarlo(funct, N, 0.01, stdSampler, bins);
 			for (double j = 0; j < bins; j++) {
 				// Normalize pixel values
 				pixels[j] /= N;
@@ -194,7 +194,7 @@ int main()
 			}
 			for (int i = 0; i < 50; i++) {
 				fmt::print("\nLevel {} correction:\n", i);
-				vector<double> correction = langevinMonteCarloRefinement(funct, N, 0.1 * pow(2, -i), stdSampler, bins);
+				vector<double> correction = langevinMonteCarloRefinement(funct, N, 0.01 * pow(2.0, -i), stdSampler, bins);
 				for (double j = 0; j < bins; j++) {
 					// Normalize correction values
 					correction[j] /= N;
@@ -351,26 +351,37 @@ vector<double> langevinMonteCarloRefinement(PerlinFunct& funct, double N, double
 		double u_next_C = u_C + 0.5 * stepsize * funct.gradientlog(u_C) + sqrt(stepsize) * (w1 + w2);
 		double u_next_F1 = u_F + 0.5 * stepsize / 2 * funct.gradientlog(u_F) + sqrt(stepsize/2) * w1;
 		double u_next_F2 = u_next_F1 + 0.5 * stepsize / 2 * funct.gradientlog(u_next_F1) + sqrt(stepsize / 2) * w2;
-
-		/*u_next_C = min(u_next_C, 1.0);
-		u_next_C = max(u_next_C, 0.0);
-
-		u_next_F1 = min(u_next_F1, 1.0);
-		u_next_F1 = max(u_next_F1, 0.0);
-
-		u_next_F2 = min(u_next_F2, 1.0);
-		u_next_F2 = max(u_next_F2, 0.0);*/
 		
 		// Calculate transition probabilities (TODO can be simplified)
-		// double T_u_un = normal_pdf(u_next, u + 0.5 * stepsize * funct.gradientlog(u), sqrt(stepsize));
-		// double T_un_u = normal_pdf(u, u_next + 0.5 * stepsize * funct.gradientlog(u_next), sqrt(stepsize));
+		double T_u_un = normal_pdf(u_next_C, u_C + 0.5 * stepsize * funct.gradientlog(u_C), sqrt(stepsize));
+		double T_un_u = normal_pdf(u_C, u_next_C + 0.5 * stepsize * funct.gradientlog(u_next_C), sqrt(stepsize));
 
 		// Acceptance ratio
-		// double a = min(1.0, (funct.value(u_next) / funct.value(u)) * (T_un_u / T_u_un));
+		double a = min(1.0, (funct.value(u_next_C) / funct.value(u_C)) * (T_un_u / T_u_un));
 
-		//if (randNum() < a) {
-		//	u = u_next;
-		//}
+		double T_u_un_F1 = normal_pdf(u_next_F1, u_F + 0.5 * stepsize * funct.gradientlog(u_F), sqrt(stepsize));
+		double T_un_u_F1 = normal_pdf(u_F, u_next_F1 + 0.5 * stepsize * funct.gradientlog(u_next_F1), sqrt(stepsize));
+
+		// Acceptance ratio
+		double a_F1 = min(1.0, (funct.value(u_next_F1) / funct.value(u_F)) * (T_un_u_F1 / T_u_un_F1));
+
+		double T_u_un_F2 = normal_pdf(u_next_F2, u_next_F1 + 0.5 * stepsize * funct.gradientlog(u_next_F1), sqrt(stepsize));
+		double T_un_u_F2 = normal_pdf(u_next_F1, u_next_F2 + 0.5 * stepsize * funct.gradientlog(u_next_F2), sqrt(stepsize));
+
+		// Acceptance ratio
+		double a_F2 = min(1.0, (funct.value(u_next_F2) / funct.value(u_next_F1)) * (T_un_u_F2 / T_u_un_F2));
+
+		if (randNum() < a) {
+			u_C = u_next_C;
+		}
+
+		if (randNum() < a_F1) {
+			if (randNum() < a_F2) {
+				u_F = u_next_F2;
+			}
+			u_F = u_next_F1;
+		}
+
 
 		int binC = floor(u_next_C * bins);
 		int binF = floor(u_next_F2 * bins);
@@ -383,6 +394,8 @@ vector<double> langevinMonteCarloRefinement(PerlinFunct& funct, double N, double
 				pixels[binF] += 1;
 			}
 		}
+
+		u_F = u_C;
 
 		//double interp = u_C + ((u_next_C - u_C) / 2);
 
@@ -402,9 +415,6 @@ vector<double> langevinMonteCarloRefinement(PerlinFunct& funct, double N, double
 		//	pixels[binC] -= L;
 		//	pixels[binF] += L;
 		//}
-
-		u_C = u_next_C;
-		u_F = u_next_F2;
 	}
 	return pixels;
 }
