@@ -106,7 +106,7 @@ int main()
 
 	// Experiment 1
 	if (false) {
-		for (double x = 11; x < 18; x++)
+		for (double x = 16; x < 25; x++)
 		{
 			int N = pow(2, x);
 			std::cout << "N = " << N << ":\n\tMonte Carlo:\n\t";
@@ -133,8 +133,8 @@ int main()
 			}
 			std::cout << "\nRelative Error: " << relError;
 			relError = 0;
-			std::cout << "\n\Two Level Langevin Monte Carlo:\n\t";
-			pixels = twoLevelLangevinMonteCarlo(funct, N / 3, stepsize, stdSampler, bins);
+			std::cout << "\n\Multi Level Langevin Monte Carlo:\n\t";
+			pixels = multiLevelLangevinMonteCarlo(funct, N / 10, N, 0.02, stdSampler, bins);
 			// No normalization needed, already present in above method.
 			for (double j = 0; j < bins; j++) {
 				cout << "| " << pixels[j];
@@ -181,41 +181,39 @@ int main()
 
 	// Experiment 3
 	if (true) {
-		for (double x = 5; x < 6; x++) {
-			double N = pow(10, x);
-			double relError = 0;
-			std::cout << "Multi Level Langevin Monte Carlo:\nBase:\n";
+		double N = 1000;
+		double relError = 0;
+		std::cout << "Multi Level Langevin Monte Carlo:\nBase:\n";
 
-			vector<double> pixels = langevinMonteCarlo(funct, N, 0.01, stdSampler, bins);
+		vector<double> pixels = langevinMonteCarloBiased(funct, N, 0.05, stdSampler, bins);
+		for (double j = 0; j < bins; j++) {
+			// Normalize pixel values
+			pixels[j] /= N;
+			cout << "| " << pixels[j];
+		}
+		for (int i = 0; i < 50; i++) {
+			fmt::print("\nLevel {} correction:\n", i);
+			vector<double> correction = langevinMonteCarloRefinement(funct, N * pow(2, i), 0.05 * pow(2.0, -i), stdSampler, bins);
 			for (double j = 0; j < bins; j++) {
-				// Normalize pixel values
-				pixels[j] /= N;
-				cout << "| " << pixels[j];
-			}
-			for (int i = 0; i < 50; i++) {
-				fmt::print("\nLevel {} correction:\n", i);
-				vector<double> correction = langevinMonteCarloRefinement(funct, N, 0.01 * pow(2.0, -i), stdSampler, bins);
-				for (double j = 0; j < bins; j++) {
-					// Normalize correction values
-					correction[j] /= N;
-					cout << "| " << correction[j];
-					pixels[j] += correction[j];
-				}
-
-				fmt::print("\n\nFinal pixel values: ");
-				for (double j = 0; j < bins; j++) {
-					cout << "| " << pixels[j];
-				}
+				// Normalize correction values
+				correction[j] /= N * pow(2, i);
+				cout << "| " << correction[j];
+				pixels[j] += correction[j];
 			}
 
 			fmt::print("\n\nFinal pixel values: ");
 			for (double j = 0; j < bins; j++) {
 				cout << "| " << pixels[j];
 			}
-
-			//std::cout << "\nRelative Error: " << relError;
-			fmt::print("\n");
 		}
+
+		fmt::print("\n\nFinal pixel values: ");
+		for (double j = 0; j < bins; j++) {
+			cout << "| " << pixels[j];
+		}
+
+		//std::cout << "\nRelative Error: " << relError;
+		fmt::print("\n");
 		std::cout << '\n';
 	}
 	
@@ -271,9 +269,9 @@ vector<double> multiLevelLangevinMonteCarlo(PerlinFunct& funct, double base_N, d
 	}
 
 	for (int i = 0; i * base_N < max_N; i++) {
-		vector<double> correction = langevinMonteCarloRefinement(funct, i * base_N, base_stepsize * pow(2, -i), stdSampler, bins);
+		vector<double> correction = langevinMonteCarloRefinement(funct, base_N, base_stepsize * pow(2, -i), stdSampler, bins);
 		for (double j = 0; j < bins; j++) {
-			pixels[j] += correction[j] / (i * base_N);
+			pixels[j] += correction[j] / base_N;
 		}
 	}
 
@@ -348,40 +346,42 @@ vector<double> langevinMonteCarloRefinement(PerlinFunct& funct, double N, double
 		// Sample brownian term
 		double w1 = stdSampler.sample();
 		double w2 = stdSampler.sample();
-		double u_next_C = u_C + 0.5 * stepsize * funct.gradientlog(u_C) + sqrt(stepsize) * (w1 + w2);
+		double u_next_C = u_C + 0.5 * stepsize * funct.gradientlog(u_C) + sqrt(stepsize / 2) * (w1 + w2);
 		double u_next_F1 = u_F + 0.5 * stepsize / 2 * funct.gradientlog(u_F) + sqrt(stepsize/2) * w1;
 		double u_next_F2 = u_next_F1 + 0.5 * stepsize / 2 * funct.gradientlog(u_next_F1) + sqrt(stepsize / 2) * w2;
 		
-		// Calculate transition probabilities (TODO can be simplified)
-		double T_u_un = normal_pdf(u_next_C, u_C + 0.5 * stepsize * funct.gradientlog(u_C), sqrt(stepsize));
-		double T_un_u = normal_pdf(u_C, u_next_C + 0.5 * stepsize * funct.gradientlog(u_next_C), sqrt(stepsize));
+		//// Calculate transition probabilities (TODO can be simplified)
+		//double T_u_un = normal_pdf(u_next_C, u_C + 0.5 * stepsize * funct.gradientlog(u_C), sqrt(stepsize));
+		//double T_un_u = normal_pdf(u_C, u_next_C + 0.5 * stepsize * funct.gradientlog(u_next_C), sqrt(stepsize));
 
-		// Acceptance ratio
-		double a = min(1.0, (funct.value(u_next_C) / funct.value(u_C)) * (T_un_u / T_u_un));
+		//// Acceptance ratio
+		//double a = min(1.0, (funct.value(u_next_C) / funct.value(u_C)) * (T_un_u / T_u_un));
 
-		double T_u_un_F1 = normal_pdf(u_next_F1, u_F + 0.5 * stepsize * funct.gradientlog(u_F), sqrt(stepsize));
-		double T_un_u_F1 = normal_pdf(u_F, u_next_F1 + 0.5 * stepsize * funct.gradientlog(u_next_F1), sqrt(stepsize));
+		//double T_u_un_F1 = normal_pdf(u_next_F1, u_F + 0.5 * stepsize * funct.gradientlog(u_F), sqrt(stepsize));
+		//double T_un_u_F1 = normal_pdf(u_F, u_next_F1 + 0.5 * stepsize * funct.gradientlog(u_next_F1), sqrt(stepsize));
 
-		// Acceptance ratio
-		double a_F1 = min(1.0, (funct.value(u_next_F1) / funct.value(u_F)) * (T_un_u_F1 / T_u_un_F1));
+		//// Acceptance ratio
+		//double a_F1 = min(1.0, (funct.value(u_next_F1) / funct.value(u_F)) * (T_un_u_F1 / T_u_un_F1));
 
-		double T_u_un_F2 = normal_pdf(u_next_F2, u_next_F1 + 0.5 * stepsize * funct.gradientlog(u_next_F1), sqrt(stepsize));
-		double T_un_u_F2 = normal_pdf(u_next_F1, u_next_F2 + 0.5 * stepsize * funct.gradientlog(u_next_F2), sqrt(stepsize));
+		//double T_u_un_F2 = normal_pdf(u_next_F2, u_next_F1 + 0.5 * stepsize * funct.gradientlog(u_next_F1), sqrt(stepsize));
+		//double T_un_u_F2 = normal_pdf(u_next_F1, u_next_F2 + 0.5 * stepsize * funct.gradientlog(u_next_F2), sqrt(stepsize));
 
-		// Acceptance ratio
-		double a_F2 = min(1.0, (funct.value(u_next_F2) / funct.value(u_next_F1)) * (T_un_u_F2 / T_u_un_F2));
+		//// Acceptance ratio
+		//double a_F2 = min(1.0, (funct.value(u_next_F2) / funct.value(u_next_F1)) * (T_un_u_F2 / T_u_un_F2));
 
-		if (randNum() < a) {
-			u_C = u_next_C;
-		}
+		//if (randNum() < a) {
+		//	u_C = u_next_C;
+		//}
 
-		if (randNum() < a_F1) {
-			if (randNum() < a_F2) {
-				u_F = u_next_F2;
-			}
-			u_F = u_next_F1;
-		}
+		//if (randNum() < a_F1) {
+		//	if (randNum() < a_F2) {
+		//		u_F = u_next_F2;
+		//	}
+		//	u_F = u_next_F1;
+		//}
 
+		u_C = u_next_C;
+		u_F = u_next_F2;
 
 		int binC = floor(u_next_C * bins);
 		int binF = floor(u_next_F2 * bins);
@@ -394,8 +394,6 @@ vector<double> langevinMonteCarloRefinement(PerlinFunct& funct, double N, double
 				pixels[binF] += 1;
 			}
 		}
-
-		u_F = u_C;
 
 		//double interp = u_C + ((u_next_C - u_C) / 2);
 
