@@ -6,6 +6,7 @@
 #include "fmt/core.h"
 #include "Thesis.h"
 #include "PerlinNoise.hpp"
+#include "matplot/matplot.h"
 
 using namespace std;
 
@@ -14,7 +15,7 @@ using namespace std;
 const double REF_VALUE_1_1_SEED_0 = 0.5469523775068327;
 const double REF_VALUE_1_10_SEED_0 = 0.5469623057974313;
 
-const vector<double> REF_IMAGE_4_10_SEED_0 = { 3.7015173673878336e-05, 0.000765472204080547, 0.012926500628362604, 0.049659201960078295, 0.21900159120798326, 0.32269015719264615, 0.11828525535777415, 0.012715394872559143, 0.0008362857837636259, 3.3935767680542344e-05 };
+vector<double> REF_IMAGE_4_10_SEED_0 = { 3.7015173673878336e-05, 0.000765472204080547, 0.012926500628362604, 0.049659201960078295, 0.21900159120798326, 0.32269015719264615, 0.11828525535777415, 0.012715394872559143, 0.0008362857837636259, 3.3935767680542344e-05 };
 class PerlinFunct;
 class StdNormalSampler;
 double naiveMonteCarloAverage(PerlinFunct& funct, double N);
@@ -24,6 +25,8 @@ vector<double> naiveMonteCarlo(PerlinFunct& funct, double N, int bins);
 vector<double> langevinMonteCarlo(PerlinFunct& funct, double N, double stepsize, StdNormalSampler& stdSampler, int bins);
 vector<double> langevinMonteCarloBiased(PerlinFunct& funct, double N, double stepsize, StdNormalSampler& stdSampler, int bins);
 vector<double> langevinMonteCarloRefinement(PerlinFunct& funct, double N, double stepsize, StdNormalSampler& stdSampler, int bins);
+vector<double> naiveMultiLevelMonteCarlo(PerlinFunct& funct, double base_N, double max_N, double factor, int bins);
+double rmse(vector<double>& result, vector<double> &truth, double N);
 double randNum();
 double normal_pdf(double x, double mean, double stddev);
 
@@ -50,11 +53,11 @@ public:
 		double grad = (log(value(x + 0.0000000001))
 			- log(value(x - 0.0000000001))) / 0.0000000002;
 		// Truncate gradients
-		//if (grad > 10) {
-		//	grad = 10;
+		//if (grad > 100) {
+		//	grad = 100;
 		//}
-		//else if (grad < -10) {
-		//	grad = -10;
+		//else if (grad < -100) {
+		//	grad = -100;
 		//}
 
 		return grad;
@@ -73,6 +76,60 @@ public:
 	}
 };
 
+void plotConvergence(PerlinFunct funct, double stepsize, int bins, double referenceN = 10000000) {
+	vector<double> referencePixels = naiveMonteCarlo(funct, referenceN, bins);
+	
+	int count = 0;
+	while (pow(2, count) < referenceN / 10) {
+		count++;
+	}
+
+	vector<double> Ns(count);
+	for (double i = 0; i < count; i++)
+	{
+		Ns[i] = pow(2, i);
+	}
+
+	StdNormalSampler stdSampler;
+	vector<double> errorsLMC(Ns.size());
+	for (double i = 0; i < Ns.size(); i++)
+	{
+		double N = Ns[i];
+
+		vector<double> pixels = langevinMonteCarlo(funct, N, stepsize, stdSampler, bins);
+
+		errorsLMC[i] = rmse(pixels, referencePixels, N);
+	}
+
+	vector<double> errorsMC(Ns.size());
+	for (double i = 0; i < Ns.size(); i++)
+	{
+		double N = Ns[i];
+
+		vector<double> pixels = naiveMonteCarlo(funct, N, bins);
+
+		errorsMC[i] = rmse(pixels, referencePixels, N);
+	}
+
+	vector<double> errorsMLMC(Ns.size());
+	for (double i = 0; i < Ns.size(); i++)
+	{
+		double N = Ns[i];
+
+		vector<double> pixels = naiveMultiLevelMonteCarlo(funct, N / 1.8, N, 0.5, bins);
+
+		errorsMLMC[i] = rmse(pixels, referencePixels, N);
+	}
+
+
+	matplot::loglog(Ns, errorsMC)->display_name("Monte Carlo");
+	matplot::hold("on");
+	matplot::loglog(Ns, errorsLMC)->display_name("Langevin Monte Carlo");
+	matplot::loglog(Ns, errorsMLMC)->display_name("Naive Multi Level Monte Carlo");
+	matplot::legend();
+	matplot::show();
+}
+
 int main()
 {
 	// Perlin funct object
@@ -85,6 +142,18 @@ int main()
 	StdNormalSampler stdSampler;
 
 	srand(0);
+
+	funct.frequency = 1;
+	funct.octaves = 30;
+	plotConvergence(funct, 0.01, 10, 100000);
+	
+	
+	return 0;
+
+
+	// Old experiments
+	// 
+	// 
 
 	// Get ref value
 	if (false) {
@@ -106,43 +175,39 @@ int main()
 
 	// Experiment 1
 	if (false) {
-		for (double x = 16; x < 25; x++)
+		for (double x = 10; x < 20; x++)
 		{
 			int N = pow(2, x);
 			std::cout << "N = " << N << ":\n\tMonte Carlo:\n\t";
 			vector<double> pixels = naiveMonteCarlo(funct, N, bins);
-			double relError = 0;
 			for (double j = 0; j < bins; j++) {
-				cout << "| " << pixels[j];
+				//cout << "| " << pixels[j];
 				//fmt::print("| {}", pixels[j]);
 				//cout << "| " << abs(pixels[j] - prevPixels[j]);
-				relError += abs((pixels[j] - REF_IMAGE_4_10_SEED_0[j]) / REF_IMAGE_4_10_SEED_0[j]);
+				// Normalize pixel values
+				pixels[j] /= N;
 			}
-			std::cout << "\nRelative Error: " << relError;
+			std::cout << "\nRMSE: " << rmse(pixels, REF_IMAGE_4_10_SEED_0, N);
 			std::cout << "\n\tLangevin Monte Carlo:\n\t";
-			relError = 0;
 			pixels = langevinMonteCarlo(funct, N, stepsize, stdSampler, bins);
 			for (double j = 0; j < bins; j++) {
 				// Normalize pixel values
 				pixels[j] /= N;
 			}
 			for (double j = 0; j < bins; j++) {
-				cout << "| " << pixels[j];
+				//cout << "| " << pixels[j];
 				//fmt::print("| {}", pixels[j]);
-				relError += abs((pixels[j] - REF_IMAGE_4_10_SEED_0[j]) / REF_IMAGE_4_10_SEED_0[j]);
 			}
-			std::cout << "\nRelative Error: " << relError;
-			relError = 0;
+			std::cout << "\nRMSE: " << rmse(pixels, REF_IMAGE_4_10_SEED_0, N);
 			std::cout << "\n\Multi Level Langevin Monte Carlo:\n\t";
 			pixels = multiLevelLangevinMonteCarlo(funct, N / 10, N, 0.02, stdSampler, bins);
 			// No normalization needed, already present in above method.
 			for (double j = 0; j < bins; j++) {
-				cout << "| " << pixels[j];
+				//cout << "| " << pixels[j];
 				//fmt::print("| {}", pixels[j]);
 				//cout << "| " << abs(pixels[j] - prevPixels[j]);
-				relError += abs((pixels[j] - REF_IMAGE_4_10_SEED_0[j]) / REF_IMAGE_4_10_SEED_0[j]);
 			}
-			std::cout << "\nRelative Error: " << relError;
+			std::cout << "\nRMSE: " << rmse(pixels, REF_IMAGE_4_10_SEED_0, N);
 			fmt::print("\n");
 		}
 	}
@@ -180,12 +245,12 @@ int main()
 	}
 
 	// Experiment 3
-	if (true) {
-		double N = 1000;
+	if (false) {
+		double N = 10000;
 		double relError = 0;
 		std::cout << "Multi Level Langevin Monte Carlo:\nBase:\n";
 
-		vector<double> pixels = langevinMonteCarloBiased(funct, N, 0.05, stdSampler, bins);
+		vector<double> pixels = langevinMonteCarloBiased(funct, N, 0.02, stdSampler, bins);
 		for (double j = 0; j < bins; j++) {
 			// Normalize pixel values
 			pixels[j] /= N;
@@ -193,7 +258,7 @@ int main()
 		}
 		for (int i = 0; i < 50; i++) {
 			fmt::print("\nLevel {} correction:\n", i);
-			vector<double> correction = langevinMonteCarloRefinement(funct, N * pow(2, i), 0.05 * pow(2.0, -i), stdSampler, bins);
+			vector<double> correction = langevinMonteCarloRefinement(funct, N * pow(2, i), 0.02 * pow(2.0, -i), stdSampler, bins);
 			for (double j = 0; j < bins; j++) {
 				// Normalize correction values
 				correction[j] /= N * pow(2, i);
@@ -305,7 +370,7 @@ vector<double> langevinMonteCarlo(PerlinFunct &funct, double N, double stepsize,
 			bin = bins - 1;
 		}
 		if (bin < 0) bin = 0;
-		pixels[bin] += 1;
+		pixels[bin] += 1 / N;
 	}
 	return pixels;
 }
@@ -380,9 +445,6 @@ vector<double> langevinMonteCarloRefinement(PerlinFunct& funct, double N, double
 		//	u_F = u_next_F1;
 		//}
 
-		u_C = u_next_C;
-		u_F = u_next_F2;
-
 		int binC = floor(u_next_C * bins);
 		int binF = floor(u_next_F2 * bins);
 
@@ -394,6 +456,9 @@ vector<double> langevinMonteCarloRefinement(PerlinFunct& funct, double N, double
 				pixels[binF] += 1;
 			}
 		}
+
+		u_C = u_next_C;
+		u_F = u_next_F2;
 
 		//double interp = u_C + ((u_next_C - u_C) / 2);
 
@@ -432,6 +497,38 @@ vector<double> naiveMonteCarlo(PerlinFunct &funct, double N, int bins) {
 	return pixels;
 }
 
+vector<double> naiveMultiLevelMonteCarlo(PerlinFunct& funct, double base_N, double max_N, double factor, int bins) {
+	vector<double> pixels(bins);
+	vector<double> correction(bins);
+
+
+	double total_N = 0;
+	for (int i = 0; total_N < max_N; i++) {
+		double N = base_N * pow(factor, i);
+
+		for (long long x = 0; x < N; x++) {
+			double u = randNum();
+			int bin = floor(u * bins);
+			if (bin == bins) {
+				bin = bins - 1;
+			}
+			correction[bin] += (funct.value(u) - pixels[bin]) / N;
+		}
+
+		for (double j = 0; j < bins; j++) {
+			cout << "| " << correction[j];
+		}
+		cout << "\n\n";
+
+		for (int j = 0; j < pixels.size(); j++) {
+			pixels[j] = (total_N / max_N) * pixels[j] + (1 - (total_N / max_N)) * correction[j];
+		}
+
+		total_N += N;
+	}
+	return pixels;
+}
+
 double naiveMonteCarloAverage(PerlinFunct& funct, double N) {
 	double expectedValue = 0;
 	for (long long x = 0; x < N; x++) {
@@ -443,4 +540,14 @@ double naiveMonteCarloAverage(PerlinFunct& funct, double N) {
 double randNum() {
 	float r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
 	return static_cast <double> (r);
+}
+
+double rmse(vector<double>& result, vector<double> &truth, double N) {
+	double error = 0;
+	for (int i = 0; i < result.size(); i++) {
+		error += pow(result[i] - truth[i], 2);
+	}
+	error /= N;
+	error = sqrt(error);
+	return error;
 }

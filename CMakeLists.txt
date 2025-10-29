@@ -15,6 +15,9 @@ add_executable(Example "example.cpp")
 find_package(fmt CONFIG REQUIRED)
 target_link_libraries(Thesis PRIVATE fmt::fmt)
 
+find_package(Matplot++ CONFIG REQUIRED)
+target_link_libraries(Thesis PRIVATE Matplot++::cimg  Matplot++::matplot)
+
 include_directories("../lib/")
 
 # TODO: Add tests and install targets if needed.
