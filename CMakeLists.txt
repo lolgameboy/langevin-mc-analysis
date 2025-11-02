@@ -9,7 +9,14 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Add source to this project's executable.
-add_executable (Thesis "Thesis.cpp" "Thesis.h")
+add_executable (Thesis "objects.cpp" "objects.h"
+						"utils.cpp" "utils.h"
+						"algorithms.cpp" "algorithms.h"
+						"experiments.cpp" "experiments.h"
+						"Thesis.cpp" "Thesis.h")
+
+
+
 add_executable(Example "example.cpp")
 
 find_package(fmt CONFIG REQUIRED)
