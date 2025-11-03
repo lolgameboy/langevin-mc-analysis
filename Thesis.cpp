@@ -36,11 +36,11 @@ int main()
 
 	StdNormalSampler stdSampler;
 
-	srand(0);
+	srand(1);
 
 	funct.frequency = 1;
 	funct.octaves = 30;
-	plotConvergence(funct, 0.01, 10, 100000);
+	plotConvergence(funct, 0.01, 100, 100000);
 	
 	
 	return 0;

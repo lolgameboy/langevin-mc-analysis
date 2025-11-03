@@ -29,7 +29,7 @@ double rmse(vector<double>& result, vector<double>& truth, double N) {
 	return error;
 }
 
-double naiveMonteCarloAverage(PerlinFunct& funct, double N) {
+double naiveMonteCarloAverage(Funct& funct, double N) {
 	double expectedValue = 0;
 	for (long long x = 0; x < N; x++) {
 		expectedValue += funct.value(randNum()) / N;

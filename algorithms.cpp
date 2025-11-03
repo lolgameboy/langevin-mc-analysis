@@ -16,7 +16,7 @@ using std::cout;
 
 
 
-vector<double> naiveMonteCarlo(PerlinFunct& funct, double N, int bins) {
+vector<double> naiveMonteCarlo(Funct& funct, double N, int bins) {
 	vector<double> pixels(bins);
 
 	for (long long x = 0; x < N; x++) {
@@ -31,7 +31,7 @@ vector<double> naiveMonteCarlo(PerlinFunct& funct, double N, int bins) {
 	return pixels;
 }
 
-vector<double> langevinMonteCarlo(PerlinFunct& funct, double N, double stepsize, StdNormalSampler& stdSampler, int bins) {
+vector<double> langevinMonteCarlo(Funct& funct, double N, double stepsize, StdNormalSampler& stdSampler, int bins) {
 	// initial random sample
 	double u = 0.5;
 
@@ -204,7 +204,7 @@ vector<double> langevinMonteCarloRefinement(PerlinFunct& funct, double N, double
 	return pixels;
 }
 
-vector<double> naiveMultiLevelMonteCarlo(PerlinFunct& funct, double base_N, double max_N, double factor, int bins) {
+vector<double> naiveMultiLevelMonteCarlo(PerlinFunct& funct, double base_N, double max_N, double factor, int bins, bool log) {
 	vector<double> pixels(bins);
 	vector<double> correction(bins);
 
@@ -212,6 +212,8 @@ vector<double> naiveMultiLevelMonteCarlo(PerlinFunct& funct, double base_N, doub
 	double total_N = 0;
 	for (int i = 0; total_N < max_N; i++) {
 		double N = base_N * pow(factor, i);
+		
+		if (log) cout << "N=" << N << "\n";
 
 		for (long long x = 0; x < N; x++) {
 			double u = randNum();
@@ -222,16 +224,43 @@ vector<double> naiveMultiLevelMonteCarlo(PerlinFunct& funct, double base_N, doub
 			correction[bin] += (funct.value(u) - pixels[bin]) / N;
 		}
 
-		for (double j = 0; j < bins; j++) {
-			cout << "| " << correction[j];
-		}
-		cout << "\n\n";
 
 		for (int j = 0; j < pixels.size(); j++) {
 			pixels[j] = (total_N / max_N) * pixels[j] + (1 - (total_N / max_N)) * correction[j];
+			
 		}
+		if (log) {
+			for (int j = 0; j < pixels.size(); j++) {
+				cout << "| " << pixels[j];
+			}
+			cout << "\n";
+			for (int j = 0; j < pixels.size(); j++) {
+				cout << "| " << correction[j];
+			}
+			cout << "\n\n";
+		}
+		
 
 		total_N += N;
 	}
+	return pixels;
+}
+
+vector<double> twoLevelHybrid(Funct& f, double N, double bins, double stepsize, StdNormalSampler& stdSampler) {
+	vector<double> pixels(bins);
+
+	Funct* stepfunct;
+
+	pixels = naiveMonteCarlo(f, N, bins);
+	stepfunct = new StepFunct(bins, pixels);
+	DiffFunct dfunct(&f, stepfunct);
+	
+	vector<double> residual = langevinMonteCarlo(dfunct, N, stepsize, stdSampler, bins);
+	double L = naiveMonteCarloAverage(dfunct, N);
+	
+	for (int j = 0; j < pixels.size(); j++) {
+		pixels[j] += L * residual[j];
+	}
+
 	return pixels;
 }
