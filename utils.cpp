@@ -19,12 +19,13 @@ double normal_pdf(double x, double mean = 0.0, double stddev = 1.0) {
 	return coefficient * std::exp(exponent);
 }
 
-double rmse(vector<double>& result, vector<double>& truth, double N) {
+double rmse(vector<double>& result, vector<double>& truth) {
 	double error = 0;
-	for (int i = 0; i < result.size(); i++) {
+	double K = result.size();
+	for (int i = 0; i < K; i++) {
 		error += std::pow(result[i] - truth[i], 2);
 	}
-	error /= N;
+	error /= K;
 	error = sqrt(error);
 	return error;
 }

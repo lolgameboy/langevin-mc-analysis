@@ -35,7 +35,7 @@ void plotConvergence(PerlinFunct& funct, double stepsize, int bins, double refer
 
 		vector<double> pixels = langevinMonteCarlo(funct, N, stepsize, stdSampler, bins);
 
-		errorsLMC[i] = rmse(pixels, referencePixels, N);
+		errorsLMC[i] = rmse(pixels, referencePixels);
 	}
 
 	vector<double> errorsMC(Ns.size());
@@ -45,7 +45,7 @@ void plotConvergence(PerlinFunct& funct, double stepsize, int bins, double refer
 
 		vector<double> pixels = naiveMonteCarlo(funct, N, bins);
 
-		errorsMC[i] = rmse(pixels, referencePixels, N);
+		errorsMC[i] = rmse(pixels, referencePixels);
 	}
 
 	vector<double> errorsMLMC(Ns.size());
@@ -55,7 +55,7 @@ void plotConvergence(PerlinFunct& funct, double stepsize, int bins, double refer
 
 		vector<double> pixels = naiveMultiLevelMonteCarlo(funct, N / 1.8, N, 0.5, bins, false);
 
-		errorsMLMC[i] = rmse(pixels, referencePixels, N);
+		errorsMLMC[i] = rmse(pixels, referencePixels);
 	}
 
 	vector<double> errorsHybrid(Ns.size());
@@ -65,17 +65,12 @@ void plotConvergence(PerlinFunct& funct, double stepsize, int bins, double refer
 
 		vector<double> pixels = twoLevelHybrid(funct, N, bins, stepsize, stdSampler);
 
-		errorsHybrid[i] = rmse(pixels, referencePixels, N);
+		errorsHybrid[i] = rmse(pixels, referencePixels);
 	}
 
 	vector<double> sqrtN(Ns.size());
 	for (double i = 0; i < Ns.size(); i++) {
 		sqrtN[i] = 1/sqrt(Ns[i]);
-	}
-
-	vector<double> inverseN(Ns.size());
-	for (double i = 0; i < Ns.size(); i++) {
-		inverseN[i] = 1 / Ns[i];
 	}
 
 	matplot::figure()->size(1600, 1200);
@@ -85,7 +80,6 @@ void plotConvergence(PerlinFunct& funct, double stepsize, int bins, double refer
 	matplot::loglog(Ns, errorsMLMC)->display_name("Naive Multi Level Monte Carlo");
 	matplot::loglog(Ns, errorsHybrid)->display_name("Two Level Hybrid Monte Carlo");
 	matplot::loglog(Ns, sqrtN)->display_name("1/sqrt(N) reference");
-	matplot::loglog(Ns, inverseN)->display_name("1/N reference");
 	matplot::legend();
 	matplot::show();
 }

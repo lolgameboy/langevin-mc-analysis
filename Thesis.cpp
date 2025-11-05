@@ -40,7 +40,7 @@ int main()
 
 	funct.frequency = 1;
 	funct.octaves = 30;
-	plotConvergence(funct, 0.01, 100, 100000);
+	plotConvergence(funct, 0.01, 100, 1000000);
 	
 	
 	return 0;
@@ -82,7 +82,7 @@ int main()
 				// Normalize pixel values
 				pixels[j] /= N;
 			}
-			std::cout << "\nRMSE: " << rmse(pixels, REF_IMAGE_4_10_SEED_0, N);
+			std::cout << "\nRMSE: " << rmse(pixels, REF_IMAGE_4_10_SEED_0);
 			std::cout << "\n\tLangevin Monte Carlo:\n\t";
 			pixels = langevinMonteCarlo(funct, N, stepsize, stdSampler, bins);
 			for (double j = 0; j < bins; j++) {
@@ -93,7 +93,7 @@ int main()
 				//cout << "| " << pixels[j];
 				//fmt::print("| {}", pixels[j]);
 			}
-			std::cout << "\nRMSE: " << rmse(pixels, REF_IMAGE_4_10_SEED_0, N);
+			std::cout << "\nRMSE: " << rmse(pixels, REF_IMAGE_4_10_SEED_0);
 			std::cout << "\n\Multi Level Langevin Monte Carlo:\n\t";
 			pixels = multiLevelLangevinMonteCarlo(funct, N / 10, N, 0.02, stdSampler, bins);
 			// No normalization needed, already present in above method.
@@ -102,7 +102,7 @@ int main()
 				//fmt::print("| {}", pixels[j]);
 				//cout << "| " << abs(pixels[j] - prevPixels[j]);
 			}
-			std::cout << "\nRMSE: " << rmse(pixels, REF_IMAGE_4_10_SEED_0, N);
+			std::cout << "\nRMSE: " << rmse(pixels, REF_IMAGE_4_10_SEED_0);
 			fmt::print("\n");
 		}
 	}

@@ -254,8 +254,12 @@ vector<double> twoLevelHybrid(Funct& f, double N, double bins, double stepsize, 
 	pixels = naiveMonteCarlo(f, N, bins);
 	stepfunct = new StepFunct(bins, pixels);
 	DiffFunct dfunct(&f, stepfunct);
-	
-	vector<double> residual = langevinMonteCarlo(dfunct, N, stepsize, stdSampler, bins);
+	vector<double> residual = naiveMonteCarlo(dfunct, N, bins);
+	for (int j = 0; j < pixels.size(); j++) {
+		cout << residual[j] << "| ";
+	}
+	cout << "\n\n";
+	//vector<double> residual = langevinMonteCarlo(dfunct, N, stepsize, stdSampler, bins);
 	double L = naiveMonteCarloAverage(dfunct, N);
 	
 	for (int j = 0; j < pixels.size(); j++) {
