@@ -1,0 +1,1 @@
+void run_object_tests();

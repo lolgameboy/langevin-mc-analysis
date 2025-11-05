@@ -5,8 +5,12 @@ cmake_minimum_required (VERSION 3.10)
 
 project ("Thesis")
 
+include(CTest)
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+enable_testing()
 
 # Add source to this project's executable.
 add_executable (Thesis "objects.cpp" "objects.h"
@@ -14,8 +18,6 @@ add_executable (Thesis "objects.cpp" "objects.h"
 						"algorithms.cpp" "algorithms.h"
 						"experiments.cpp" "experiments.h"
 						"Thesis.cpp" "Thesis.h")
-
-
 
 add_executable(Example "example.cpp")
 
@@ -28,3 +30,8 @@ target_link_libraries(Thesis PRIVATE Matplot++::cimg  Matplot++::matplot)
 include_directories("../lib/")
 
 # TODO: Add tests and install targets if needed.
+
+add_executable (Tests "objects.cpp" "objects.h" "objects_tests.cpp"
+						"utils.cpp" "utils.h" "tests.cpp" "objects_tests.h")
+
+add_test (NAME Tests COMMAND Tests)
