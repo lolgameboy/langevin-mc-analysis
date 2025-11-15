@@ -1,6 +1,7 @@
 #include <random>
 #include <vector>
 #include <cmath>
+#include <iostream>
 
 #include "objects.h"
 #include "utils.h"
@@ -36,4 +37,10 @@ double naiveMonteCarloAverage(Funct& funct, double N) {
 		expectedValue += funct.value(randNum()) / N;
 	}
 	return expectedValue;
+}
+
+void printVector(vector<double> v) {
+	for (int i = 0; i < v.size(); i++) {
+		std::cout << v[i] << " |";
+	}
 }

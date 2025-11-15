@@ -18,6 +18,7 @@ using std::cout;
 
 vector<double> naiveMonteCarlo(Funct& funct, double N, int bins) {
 	vector<double> pixels(bins);
+	vector<double> sampleCounts(bins);
 
 	for (long long x = 0; x < N; x++) {
 		double u = randNum();
@@ -25,7 +26,12 @@ vector<double> naiveMonteCarlo(Funct& funct, double N, int bins) {
 		if (bin == bins) {
 			bin = bins - 1;
 		}
-		pixels[bin] += funct.value(u) / N;
+		pixels[bin] += funct.value(u);
+		sampleCounts[bin] += 1;
+	}
+	
+	for (int j = 0; j < bins; j++) {
+		pixels[j] /= sampleCounts[j];
 	}
 
 	return pixels;
@@ -33,7 +39,7 @@ vector<double> naiveMonteCarlo(Funct& funct, double N, int bins) {
 
 vector<double> langevinMonteCarlo(Funct& funct, double N, double stepsize, StdNormalSampler& stdSampler, int bins) {
 	// initial random sample
-	double u = 0.5;
+	double u = randNum();
 
 	vector<double> pixels(bins);
 
@@ -58,7 +64,8 @@ vector<double> langevinMonteCarlo(Funct& funct, double N, double stepsize, StdNo
 			bin = bins - 1;
 		}
 		if (bin < 0) bin = 0;
-		pixels[bin] += 1 / N;
+		pixels[bin] += 1 / N * bins; // Important realization: * bins is nessecary to ensure result integrates to 1. 
+										// Think of uniform dist from 0 to 1 with 10 bins as example.
 	}
 	return pixels;
 }
@@ -68,12 +75,12 @@ vector<double> twoLevelLangevinMonteCarlo(PerlinFunct& funct, double base_N, dou
 
 	for (double j = 0; j < bins; j++) {
 		// Normalize pixel values
-		pixels[j] /= base_N;
+		pixels[j] /= base_N * bins;
 	}
 
 	vector<double> correction = langevinMonteCarloRefinement(funct, base_N, base_stepsize * 0.5, stdSampler, bins);
 	for (double j = 0; j < bins; j++) {
-		pixels[j] += correction[j] / base_N;
+		pixels[j] += correction[j] / base_N * bins;
 	}
 
 	return pixels;
@@ -84,13 +91,13 @@ vector<double> multiLevelLangevinMonteCarlo(PerlinFunct& funct, double base_N, d
 
 	for (double j = 0; j < bins; j++) {
 		// Normalize pixel values
-		pixels[j] /= base_N;
+		pixels[j] /= base_N * bins;
 	}
 
 	for (int i = 0; i * base_N < max_N; i++) {
 		vector<double> correction = langevinMonteCarloRefinement(funct, base_N, base_stepsize * pow(2, -i), stdSampler, bins);
 		for (double j = 0; j < bins; j++) {
-			pixels[j] += correction[j] / base_N;
+			pixels[j] += correction[j] / base_N * bins;
 		}
 	}
 
@@ -252,11 +259,22 @@ vector<double> twoLevelHybrid(Funct& f, double N, double bins, double stepsize, 
 	Funct* stepfunct;
 
 	pixels = naiveMonteCarlo(f, N, bins);
+	for (double j = 0; j < pixels.size(); j++) {
+		cout << pixels[j] << "| ";
+	}
 	stepfunct = new StepFunct(bins, pixels);
+	cout << "STEPFUNCT :\n\n";
+	for (double j = 0; j < pixels.size(); j++) {
+		cout << (*stepfunct).value((j / pixels.size()) + 0.001) << "| ";
+	}
+	cout << "DIFFFUNCT :\n\n";
 	DiffFunct dfunct(&f, stepfunct);
+	for (double j = 0; j < pixels.size(); j++) {
+		cout << dfunct.value((j / pixels.size()) + 0.001) << "| ";
+	}
 	vector<double> residual = naiveMonteCarlo(dfunct, N, bins);
 	for (int j = 0; j < pixels.size(); j++) {
-		cout << residual[j] << "| ";
+		//cout << residual[j] << "| ";
 	}
 	cout << "\n\n";
 	//vector<double> residual = langevinMonteCarlo(dfunct, N, stepsize, stdSampler, bins);

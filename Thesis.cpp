@@ -29,8 +29,8 @@ int main()
 {
 	// Perlin funct object
 	PerlinFunct funct;
-	funct.frequency = 4;
-	funct.octaves = 10;
+	funct.frequency = 10;
+	funct.octaves = 3;
 	const int bins = 10;
 	const double stepsize = 0.01;
 
@@ -38,9 +38,19 @@ int main()
 
 	srand(1);
 
-	funct.frequency = 1;
-	funct.octaves = 30;
-	plotConvergence(funct, 0.01, 100, 1000000);
+	if (true) {
+		funct.frequency = 5;
+		funct.octaves = 5;
+		plotConvergence(funct, 0.01, 100, 10000000);
+	}
+	// Plot monte carlo test
+	if (false) {
+		plotMonteCarlo(funct, 100000, 100);
+	}
+
+	if (false) {
+		plotLangevin(funct, 100000, 100, 0.01);
+	}
 	
 	
 	return 0;
