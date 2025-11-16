@@ -29,29 +29,26 @@ int main()
 {
 	// Perlin funct object
 	PerlinFunct funct;
-	funct.frequency = 10;
-	funct.octaves = 3;
-	const int bins = 10;
+	funct.frequency = 20;
+	funct.octaves = 1;
+	const int bins = 100;
 	const double stepsize = 0.01;
 
 	StdNormalSampler stdSampler;
 
 	srand(1);
 
-	if (true) {
-		funct.frequency = 5;
-		funct.octaves = 5;
-		plotConvergence(funct, 0.01, 100, 10000000);
+	switch (int experiment = 1) {
+	case 1:
+		plotConvergence(funct, 0.01, bins, 10000000);
+		break;
+	case 2: 
+		plotMonteCarlo(funct, 100000, bins);
+		break;
+	case 3:
+		plotLangevin(funct, 100000, bins, 0.01);
+		break;
 	}
-	// Plot monte carlo test
-	if (false) {
-		plotMonteCarlo(funct, 100000, 100);
-	}
-
-	if (false) {
-		plotLangevin(funct, 100000, 100, 0.01);
-	}
-	
 	
 	return 0;
 

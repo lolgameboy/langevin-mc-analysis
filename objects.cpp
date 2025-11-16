@@ -22,7 +22,8 @@ double PerlinFunct::value(double x) {
 		return 0;
 	}
 	double val = perlin.octave1D_01((x * frequency), octaves);
-	val *= 2 * normal_pdf(x, 0.5, 0.1);
+	//val *= normal_pdf(x, 0.5, 0.1);
+	val *= normal_pdf(x, 0.5, 0.2);
 	return val;
 }
 

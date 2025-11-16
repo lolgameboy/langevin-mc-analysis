@@ -12,10 +12,11 @@
 using std::vector;
 using std::pow;
 using std::sqrt;
+using std::cout;
 
 void plotConvergence(PerlinFunct& funct, double stepsize, int bins, double referenceN) {
 	vector<double> referencePixels = naiveMonteCarlo(funct, referenceN, bins);
-	double L = naiveMonteCarloAverage(funct, referenceN / 5);
+	double L = naiveMonteCarloAverage(funct, referenceN);
 
 	int count = 0;
 	while (pow(2, count) < referenceN / 10) {
@@ -35,10 +36,13 @@ void plotConvergence(PerlinFunct& funct, double stepsize, int bins, double refer
 		double N = Ns[i];
 
 		vector<double> pixels = langevinMonteCarlo(funct, N, stepsize, stdSampler, bins);
+		cout << "\n " << L << "\n";
 		// Langevin gives *proportional* distribution. Scale to get actual function.
 		for (int j = 0; j < bins; j++) {
 			pixels[j] = pixels[j] * L;
+			cout << pixels[j] << " | ";
 		}
+		cout << "\n";
 
 		errorsLMC[i] = rmse(pixels, referencePixels);
 	}
@@ -58,9 +62,9 @@ void plotConvergence(PerlinFunct& funct, double stepsize, int bins, double refer
 	{
 		double N = Ns[i];
 
-		vector<double> pixels = naiveMultiLevelMonteCarlo(funct, N / 1.8, N, 0.5, bins, false);
+		//vector<double> pixels = naiveMultiLevelMonteCarlo(funct, N / 1.8, N, 0.5, bins, false);
 
-		errorsMLMC[i] = rmse(pixels, referencePixels);
+		//errorsMLMC[i] = rmse(pixels, referencePixels);
 	}
 
 	vector<double> errorsHybrid(Ns.size());
@@ -68,9 +72,9 @@ void plotConvergence(PerlinFunct& funct, double stepsize, int bins, double refer
 	{
 		double N = Ns[i];
 
-		vector<double> pixels = twoLevelHybrid(funct, N, bins, stepsize, stdSampler);
+		//vector<double> pixels = twoLevelHybrid(funct, N, bins, stepsize, stdSampler);
 
-		errorsHybrid[i] = rmse(pixels, referencePixels);
+		// errorsHybrid[i] = rmse(pixels, referencePixels);
 	}
 
 	vector<double> sqrtN(Ns.size());
@@ -82,8 +86,8 @@ void plotConvergence(PerlinFunct& funct, double stepsize, int bins, double refer
 	matplot::loglog(Ns, errorsMC)->display_name("Monte Carlo");
 	matplot::hold("on");
 	matplot::loglog(Ns, errorsLMC)->display_name("Langevin Monte Carlo");
-	matplot::loglog(Ns, errorsMLMC)->display_name("Naive Multi Level Monte Carlo");
-	matplot::loglog(Ns, errorsHybrid)->display_name("Two Level Hybrid Monte Carlo");
+	//matplot::loglog(Ns, errorsMLMC)->display_name("Naive Multi Level Monte Carlo");
+	//matplot::loglog(Ns, errorsHybrid)->display_name("Two Level Hybrid Monte Carlo");
 	matplot::loglog(Ns, sqrtN)->display_name("1/sqrt(N) reference");
 	matplot::legend();
 	matplot::show();
@@ -117,7 +121,7 @@ void plotLangevin(Funct& funct, double N, int bins, double stepsize) {
 	std::cout << "\n";
 
 	// Calculate L to correctly assess accuracy.
-	double L = naiveMonteCarloAverage(funct, 100000);
+	double L = naiveMonteCarloAverage(funct, N);
 	vector<double> x(bins);
 	vector<double> scaled_pixels(bins);
 
