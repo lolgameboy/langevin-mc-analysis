@@ -12,6 +12,14 @@
 #include "experiments.h"
 #include "Thesis.h"
 
+#include "algorithmsNd.h"
+#include "experimentsNd.h"
+
+
+#include <Eigen/Dense>
+
+using Eigen::MatrixXd;
+
 
 using std::vector;
 using std::pow;
@@ -27,23 +35,77 @@ vector<double> REF_IMAGE_4_10_SEED_0 = { 3.7015173673878336e-05, 0.0007654722040
 
 int main()
 {
-	// Perlin funct object
+	// Delta is currently not in use anymore
+	// diminAdapt1 close to 0 (0.0001) disables adaptation (Possibly due to absense of delta use. 
+	//												0.0001 then replaces delta b because all adaptation coeff (see code LMC) 
+	//												are between to 0.001 and 0.0001 then, which is basically same as delta.
+	// DiminAdapt2 not in use
+
+	// The somewhat final experiments: --------------------------------------------------------------------
+	
+	// 1D:
 	PerlinFunct funct;
-	funct.frequency = 20;
+	funct.frequency = 10;
 	funct.octaves = 1;
-	const int bins = 100;
-	const double stepsize = 0.01;
 
 	StdNormalSampler stdSampler;
+
+	// 1D Experiment for presentation
+	// plotConvergence(funct, 0.01, 10, 1000000);
+
+
+	// ND:
+	// 
+	// Experiment A: 2D LMC Nothing fancy
+	// plotConvergenceNd(2, 0, 0.01, 10, 1000000, 0.97, 0.001, 0.0001, 1.5);
+
+	// Experiment B: 6D LMC Nothing fancy
+	// plotConvergenceNd(6, 0, 0.01, 10, 1000000, 0.97, 0.001, 0.0001, 1.5);
+
+	// Experiment C: 6D LMC cov 0.5
+	// plotConvergenceNd(6, 0.5, 0.01, 10, 1000000, 0.97, 0.001, 0.0001, 1.5);
+
+	// Experiment D: 6D LMC cov 0.8
+	// plotConvergenceNd(6, 0.8, 0.01, 10, 1000000, 0.97, 0.001, 0.0001, 1.5);
+
+	// Experiment E: 6D LMC cov 0.95
+	// plotConvergenceNd(6, 0.95, 0.01, 10, 1000000, 0.97, 0.001, 0.0001, 1.5);
+
+	// Experiment F: 6D LMC cov 0.95 met preconditioned langevin
+	plotConvergenceNd(6, 0.95, 0.01, 10, 1000000, 0.97, 0.001, 0.0001, 1.5, true);
+
+	return 0;
+
+
+	
+
+
+
+
+	// OLD experiments
+	// Perlin funct object
+	//Temporarily commented out bc of redefinition
+	//PerlinFunct funct;
+	//funct.frequency = 10;
+	//funct.octaves = 1;
+
+	//StdNormalSampler stdSampler;
+	
+	// 1D Experiment for presentation
+	plotConvergence(funct, 0.01, 10, 1000000);
+	return 0;
+
+	const int bins = 100;
+	const double stepsize = 0.01;
 
 	srand(1);
 
 	switch (int experiment = 1) {
 	case 1:
-		plotConvergence(funct, 0.01, bins, 10000000);
+		plotConvergence(funct, 0.01, bins, 1000000);
 		break;
 	case 2: 
-		plotMonteCarlo(funct, 100000, bins);
+		plotMonteCarlo(funct, 100, bins);
 		break;
 	case 3:
 		plotLangevin(funct, 100000, bins, 0.01);

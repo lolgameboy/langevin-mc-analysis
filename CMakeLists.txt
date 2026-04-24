@@ -17,9 +17,11 @@ add_executable (Thesis "objects.cpp" "objects.h"
 						"utils.cpp" "utils.h"
 						"algorithms.cpp" "algorithms.h"
 						"experiments.cpp" "experiments.h"
-						"Thesis.cpp" "Thesis.h")
+						"Thesis.cpp" "Thesis.h" "algorithmsNd.cpp" "algorithmsNd.h" "experimentsNd.cpp" "experimentsNd.h")
 
-add_executable(Example "example.cpp")
+target_compile_options(Thesis PRIVATE /bigobj)
+
+# add_executable(Example "example.cpp")
 
 find_package(fmt CONFIG REQUIRED)
 target_link_libraries(Thesis PRIVATE fmt::fmt)
@@ -28,10 +30,11 @@ find_package(Matplot++ CONFIG REQUIRED)
 target_link_libraries(Thesis PRIVATE Matplot++::cimg  Matplot++::matplot)
 
 include_directories("../lib/")
+include_directories("../lib/eigen-5.0.0/")
 
 # TODO: Add tests and install targets if needed.
 
-add_executable (Tests "objects.cpp" "objects.h" "objects_tests.cpp"
-						"utils.cpp" "utils.h" "tests.cpp" "objects_tests.h")
+# add_executable (Tests "objects.cpp" "objects.h" "objects_tests.cpp"
+# 						"utils.cpp" "utils.h" "tests.cpp" "objects_tests.h")
 
 add_test (NAME Tests COMMAND Tests)

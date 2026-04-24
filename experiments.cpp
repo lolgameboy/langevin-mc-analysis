@@ -4,6 +4,7 @@
 #include "fmt/core.h"
 #include "matplot/matplot.h"
 
+#include <iostream>
 #include "objects.h"
 #include "utils.h"
 #include "algorithms.h"
@@ -82,14 +83,21 @@ void plotConvergence(PerlinFunct& funct, double stepsize, int bins, double refer
 		sqrtN[i] = 1/sqrt(Ns[i]);
 	}
 
-	matplot::figure()->size(1600, 1200);
+	matplot::figure_handle figure = matplot::figure();
+	figure->size(1600, 1200);
 	matplot::loglog(Ns, errorsMC)->display_name("Monte Carlo");
 	matplot::hold("on");
 	matplot::loglog(Ns, errorsLMC)->display_name("Langevin Monte Carlo");
 	//matplot::loglog(Ns, errorsMLMC)->display_name("Naive Multi Level Monte Carlo");
 	//matplot::loglog(Ns, errorsHybrid)->display_name("Two Level Hybrid Monte Carlo");
 	matplot::loglog(Ns, sqrtN)->display_name("1/sqrt(N) reference");
+	matplot::xlabel("N Samples in markov chain");
+	matplot::ylabel("RMSE");
 	matplot::legend();
+	std::string name = std::format("Convergence 1D-LMC, stepsize={}, bins=10", stepsize, bins);
+	matplot::title(name);
+	// Saving does not play nice. I save manually for now.
+	// matplot::save("../../../figures/" + name + ".png");
 	matplot::show();
 }
 
@@ -108,7 +116,7 @@ void plotMonteCarlo(Funct &funct, double N, int bins) {
 	fig->size(1600, 1200);
 	plotFunct(funct, (double)bins * 10, fig);
 
-	matplot::plot(x, pixels);
+	matplot::stairs(x, pixels);
 	matplot::legend();
 	matplot::show();
 }

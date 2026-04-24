@@ -2,8 +2,12 @@
 
 #include <vector>
 #include <random>
+#include <Eigen/Dense>
 
 #include "PerlinNoise.hpp"
+
+using Eigen::MatrixXd;
+using Eigen::VectorXd;
 
 class Funct {
 public:
@@ -49,4 +53,41 @@ public:
 	std::normal_distribution<double> d{ 0, 1 };
 
 	double sample();
+	VectorXd sampleVector(int dim);
+};
+
+class NdFunct {
+public:
+	int dim;
+
+	bool limitDomain;
+
+	NdFunct(int d, bool limdom) {
+		dim = d;
+		limitDomain = limdom;
+	};
+
+	virtual double value(VectorXd x) = 0;
+	virtual VectorXd gradientlog(VectorXd x);
+};
+
+class GaussianNd : public NdFunct {
+public:
+	VectorXd mean;
+	MatrixXd covar;
+	MatrixXd covar_inv;
+
+	GaussianNd(int d, MatrixXd cov_matrix, bool limitDom);
+
+	double value(VectorXd x);
+	virtual VectorXd gradientlog(VectorXd x);
+};
+
+class ComplexNd : public NdFunct {
+public:
+	double lambda;
+
+	ComplexNd(int dim, int lam, bool limitDom);
+
+	double value(VectorXd x);
 };

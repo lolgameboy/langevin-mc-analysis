@@ -31,7 +31,7 @@ vector<double> naiveMonteCarlo(Funct& funct, double N, int bins) {
 	}
 	
 	for (int j = 0; j < bins; j++) {
-		pixels[j] /= sampleCounts[j];
+		if (sampleCounts[j] > 0) pixels[j] /= sampleCounts[j];
 	}
 
 	return pixels;
