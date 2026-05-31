@@ -19,15 +19,21 @@ void plotConvergence(PerlinFunct& funct, double stepsize, int bins, double refer
 	vector<double> referencePixels = naiveMonteCarlo(funct, referenceN, bins);
 	double L = naiveMonteCarloAverage(funct, referenceN);
 
+	// Do not do experiments on too small N values
+	int precount = 0;
+	while (pow(2, precount) < bins * 10) {
+		precount++;
+	}
+
 	int count = 0;
-	while (pow(2, count) < referenceN / 10) {
+	while (pow(2, count + precount) < referenceN / 10) {
 		count++;
 	}
 
 	vector<double> Ns(count);
 	for (double i = 0; i < count; i++)
 	{
-		Ns[i] = pow(2, i);
+		Ns[i] = pow(2, precount + i);
 	}
 
 	StdNormalSampler stdSampler;
@@ -94,7 +100,7 @@ void plotConvergence(PerlinFunct& funct, double stepsize, int bins, double refer
 	matplot::xlabel("N Samples in markov chain");
 	matplot::ylabel("RMSE");
 	matplot::legend();
-	std::string name = std::format("Convergence 1D-LMC, stepsize={}, bins=10", stepsize, bins);
+	std::string name = std::format("Convergence 1D-LMC, stepsize={}, bins={}", stepsize, bins);
 	matplot::title(name);
 	// Saving does not play nice. I save manually for now.
 	// matplot::save("../../../figures/" + name + ".png");

@@ -35,14 +35,41 @@ vector<double> REF_IMAGE_4_10_SEED_0 = { 3.7015173673878336e-05, 0.0007654722040
 
 int main()
 {
+	
+	// Experiments in text -----------------------------------------------------
+	
+	// Correlation experiment
+	//plotExperimentCorrelation(6, 0.95, 0.01, 10, 10000000, true);
+
+	// Preconditioning experiments
+	//plotConvergenceNd(6, 0.95, 0.01, 10, 10000000, 0.97, 0.001, 0, 1.5, true, true, 1);
+	//plotConvergenceNd(6, 0.95, 0.01, 10, 10000000, 0.97, 0.001, 0, 1.5, true, true, 1000);
+	
+	// Adaptation for preconditioning
+	//plotConvergenceNd(6, 0.95, 0.01, 10, 10000000, 0.97, 0.001, 0.2, 1.5, true, true, 1);
+	plotConvergenceNd(6, 0.95, 0.01, 10, 10000000, 0.97, 0.001, 0.2, 1.5, true, true, 1000);
+
+
+	// plotConvergenceNd(6, 0, 0.01, 10, 1000000, 0.97, 0.001, 0.0001, 1.5);
+
+	// plotConvergenceNd(6, 0.95, 0.01, 10, 1000000, 0.97, 0.001, 0.0001, 1.5);
+	
+	
+	
+	
+	
+	
+	
+
+	
+	// The somewhat final experiments: --------------------------------------------------------------------
+	
 	// Delta is currently not in use anymore
 	// diminAdapt1 close to 0 (0.0001) disables adaptation (Possibly due to absense of delta use. 
 	//												0.0001 then replaces delta b because all adaptation coeff (see code LMC) 
 	//												are between to 0.001 and 0.0001 then, which is basically same as delta.
 	// DiminAdapt2 not in use
 
-	// The somewhat final experiments: --------------------------------------------------------------------
-	
 	// 1D:
 	PerlinFunct funct;
 	funct.frequency = 10;
@@ -51,13 +78,13 @@ int main()
 	StdNormalSampler stdSampler;
 
 	// 1D Experiment for presentation
-	// plotConvergence(funct, 0.01, 10, 1000000);
+	// plotConvergence(funct, 0.01, 100, 10000000);
 
 
 	// ND:
 	// 
 	// Experiment A: 2D LMC Nothing fancy
-	// plotConvergenceNd(2, 0, 0.01, 10, 1000000, 0.97, 0.001, 0.0001, 1.5);
+	// plotConvergenceNd(2, 0, 0.01, 10, 1000000, 0.97, 0.001, 0.0001, 1.5, false, true);
 
 	// Experiment B: 6D LMC Nothing fancy
 	// plotConvergenceNd(6, 0, 0.01, 10, 1000000, 0.97, 0.001, 0.0001, 1.5);
@@ -72,7 +99,7 @@ int main()
 	// plotConvergenceNd(6, 0.95, 0.01, 10, 1000000, 0.97, 0.001, 0.0001, 1.5);
 
 	// Experiment F: 6D LMC cov 0.95 met preconditioned langevin
-	plotConvergenceNd(6, 0.95, 0.01, 10, 1000000, 0.97, 0.001, 0.0001, 1.5, true);
+	// plotConvergenceNd(6, 0.95, 0.01, 10, 1000000, 0.97, 0.001, 0.0001, 1.5, true);
 
 	return 0;
 
